@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 
-source /lib/functions.sh
-source /lib/functions/semver.sh
-source /etc/openwrt_release
-source /lib/functions/guard.sh
+. /lib/functions.sh
+. /lib/functions/semver.sh
+. /etc/openwrt_release
+. /lib/functions/guard.sh
 
 if [ -f /etc/freifunk_release ]; then 
-  source /etc/freifunk_release
+  . /etc/freifunk_release
   DISTRIB_ID="Freifunk Berlin"
   DISTRIB_RELEASE=$FREIFUNK_RELEASE
 fi
@@ -206,7 +206,7 @@ change_olsrd_dygw_ping() {
     local config=$1
     local library=''
     config_get library $config library
-    if [ $library == 'olsrd_dyn_gw.so.0.5' ]; then
+    if [ $library = 'olsrd_dyn_gw.so.0.5' ]; then
       uci delete olsrd.$config.Ping
       uci add_list olsrd.$config.Ping=85.214.20.141     # dns.digitalcourage.de
       uci add_list olsrd.$config.Ping=213.73.91.35      # dnscache.ccc.berlin.de
@@ -444,7 +444,7 @@ r1_1_0_change_olsrd_lib_num() {
 }
 
 r1_1_0_notunnel_ffuplink() {
-  if [ "$(uci -q get ffberlin-uplink.preset.current)" == "no-tunnel" ]; then
+  if [ "$(uci -q get ffberlin-uplink.preset.current)" = "no-tunnel" ]; then
     log "update the ffuplink_dev to have a static macaddr if not already set"
     local macaddr=$(uci -q get network.ffuplink_dev.macaddr)
     if [ $? -eq 1 ]; then
@@ -461,7 +461,7 @@ r1_1_0_notunnel_ffuplink() {
 }
 
 r1_1_0_notunnel_ffuplink_ipXtable() {
-  if [ "$(uci -q get ffberlin-uplink.preset.current)" == "no-tunnel" ]; then
+  if [ "$(uci -q get ffberlin-uplink.preset.current)" = "no-tunnel" ]; then
     log "update the ffuplink no-tunnel settings to use options ip4table and ip6table"
     uci set network.ffuplink.ip4table="ffuplink"
     uci set network.ffuplink.ip6table="ffuplink"
@@ -474,7 +474,7 @@ r1_1_0_olsrd_dygw_ping() {
     local lib=''
     config_get lib $config library
     local libname=${lib%%.*}
-    if [ $lib == "olsrd_dyn_gw" ]; then
+    if [ $lib = "olsrd_dyn_gw" ]; then
       uci del_list olsrd.$config.Ping=213.73.91.35   # dnscache.ccc.berlin.de
       uci add_list olsrd.$config.Ping=80.67.169.40   # www.fdn.fr/actions/dns
       uci del_list olsrd.$config.Ping=85.214.20.141  # old digitalcourage
@@ -521,9 +521,9 @@ r1_1_0_update_dns_entry() {
 r1_1_0_update_uplink_notunnel_name() {
   log "update name of uplink-preset notunnel"
   local result=$(uci -q get ffberlin-uplink.preset.current)
-  [[ $? -eq 0 ]] && [[ $result == "no-tunnel" ]] && uci set ffberlin-uplink.preset.current=notunnel
+  [ $? -eq 0 ] && [ $result = "no-tunnel" ] && uci set ffberlin-uplink.preset.current=notunnel
   result=$(uci -q get ffberlin-uplink.preset.previous)
-  [[ $? -eq 0 ]] && [[ $result == "no-tunnel" ]] && uci set ffberlin-uplink.preset.previous=notunnel
+  [ $? -eq 0 ] && [ $result = "no-tunnel" ] && uci set ffberlin-uplink.preset.previous=notunnel
   log "update name of uplink-preset notunnel done"
 }
 
@@ -538,7 +538,7 @@ r1_1_0_firewall_remove_advanced() {
 r1_1_0_statistics_server() {
   log "Setting the statistcs server to \"monitor.berlin.freifunk.net\"."
   local result=$(uci -q get luci_statistics.\@collectd_network_server\[0\].host)
-  [ $? -eq 0 ] && [ $result == "77.87.48.12" ] && \
+  [ $? -eq 0 ] && [ $result = "77.87.48.12" ] && \
     uci set luci_statistics.\@collectd_network_server\[0\].host=monitor.berlin.freifunk.net
 }
 
@@ -600,7 +600,7 @@ r1_1_0_wifi_iface_names() {
 
     # determine a name for this section
     local ifname=$(uci -q get wireless.${config}.ifname)
-    [ "X${ifname}X" == "XX" ] && ifname="wifinet${count}"
+    [ "X${ifname}X" = "XX" ] && ifname="wifinet${count}"
     ifname=$(echo $ifname | sed -e 's/-/_/g')
     uci -q rename wireless.$config=$ifname
     let "count=count+1"
@@ -620,7 +620,7 @@ r1_1_0_ffwizard() {
     local device=''
     config_get mode $config mode
     config_get device $config device
-    [ $mode == "mesh" ] && mode="80211s"
+    [ $mode = "mesh" ] && mode="80211s"
     [ $mode != "adhoc" ] && [ $mode != "80211s" ] && return
 
     uci set ffwizard.settings.meshmode_${device}=${mode}
@@ -656,7 +656,7 @@ r1_1_1_rssiled() {
     local ifname=''
     config_get mode $config mode
     config_get ifname $config ifname
-    [ $mode != "adhoc" ] && [ $mode != "mesh"] && return
+    [ $mode != "adhoc" ] && [ $mode != "mesh" ] && return
 
     local rssidev=${ifname%%-*}
     local result=$(uci -q get system.rssid_${rssidev}.dev)
@@ -681,12 +681,12 @@ r1_1_2_dnsmasq_ignore_wan() {
   local notinterfaces=$(uci -q get dhcp.@dnsmasq[0].notinterface)
   local found=0
   for interface in ${notinterfaces}; do
-    if [ "X${interface}X" == "XwanX" ]; then
+    if [ "X${interface}X" = "XwanX" ]; then
       found=1
     fi
   done
 
-  if [ "X${found}X" == "X0X"]; then
+  if [ "X${found}X" = "X0X" ]; then
     log "adjust dnsmasq to ignore wan iface in log"
     uci add_list dhcp.@dnsmasq[0].notinterface='wan'
     uci commit dhcp
@@ -952,7 +952,7 @@ r1_2_0_tunneldigger_srv() {
   local srv=$2
   local result=$(uci -q get tunneldigger.${section})
   # check to make sure such a section is defined}
-  if [ "$result" == "broker" ]; then
+  if [ "$result" = "broker" ]; then
     log "updating server list for $section"
     uci -q delete tunneldigger.${section}.address
     uci -q set tunneldigger.${section}.srv="$srv"
@@ -964,7 +964,7 @@ r1_2_0_tunneldigger_srv() {
 r1_2_0_ucitrack() {
   # in case there are multiple freifunk-policytrouing sections, remove extras
   log "removing extra freifunk-policyrouting sections from ucitrack"
-  while [ "$(uci -q get ucitrack.@freifunk-policyrouting[1])" == "freifunk-policyrouting" ]; do
+  while [ "$(uci -q get ucitrack.@freifunk-policyrouting[1])" = "freifunk-policyrouting" ]; do
     uci -q delete ucitrack.@freifunk-policyrouting[1]
   done
 
